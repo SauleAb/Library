@@ -80,8 +80,11 @@
             this.label1 = new System.Windows.Forms.Label();
             this.lbCurrentlyAvailable = new System.Windows.Forms.Label();
             this.tpBorrowedBooks = new System.Windows.Forms.TabPage();
+            this.listViewLibraryBorrowedBooks = new System.Windows.Forms.ListView();
+            this.columnBook = new System.Windows.Forms.ColumnHeader();
+            this.columnByWho = new System.Windows.Forms.ColumnHeader();
+            this.columnSinceWhen = new System.Windows.Forms.ColumnHeader();
             this.label2 = new System.Windows.Forms.Label();
-            this.listBoxBorrowedBooks = new System.Windows.Forms.ListBox();
             this.tpReturn = new System.Windows.Forms.TabPage();
             this.gbReturn = new System.Windows.Forms.GroupBox();
             this.listViewBorrowedBooks = new System.Windows.Forms.ListView();
@@ -156,7 +159,6 @@
             this.tbRegisterLogin.TabIndex = 0;
             this.tbRegisterLogin.Text = "Register/Find";
             this.tbRegisterLogin.UseVisualStyleBackColor = true;
-            this.tbRegisterLogin.Click += new System.EventHandler(this.tbBorrowReturn_Click);
             // 
             // gbRegister
             // 
@@ -653,14 +655,42 @@
             // 
             // tpBorrowedBooks
             // 
+            this.tpBorrowedBooks.Controls.Add(this.listViewLibraryBorrowedBooks);
             this.tpBorrowedBooks.Controls.Add(this.label2);
-            this.tpBorrowedBooks.Controls.Add(this.listBoxBorrowedBooks);
             this.tpBorrowedBooks.Location = new System.Drawing.Point(4, 24);
             this.tpBorrowedBooks.Name = "tpBorrowedBooks";
             this.tpBorrowedBooks.Size = new System.Drawing.Size(1073, 551);
             this.tpBorrowedBooks.TabIndex = 6;
             this.tpBorrowedBooks.Text = "Borrowed books";
             this.tpBorrowedBooks.UseVisualStyleBackColor = true;
+            // 
+            // listViewLibraryBorrowedBooks
+            // 
+            this.listViewLibraryBorrowedBooks.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
+            this.columnBook,
+            this.columnByWho,
+            this.columnSinceWhen});
+            this.listViewLibraryBorrowedBooks.Location = new System.Drawing.Point(146, 117);
+            this.listViewLibraryBorrowedBooks.Name = "listViewLibraryBorrowedBooks";
+            this.listViewLibraryBorrowedBooks.Size = new System.Drawing.Size(781, 317);
+            this.listViewLibraryBorrowedBooks.TabIndex = 5;
+            this.listViewLibraryBorrowedBooks.UseCompatibleStateImageBehavior = false;
+            this.listViewLibraryBorrowedBooks.View = System.Windows.Forms.View.Details;
+            // 
+            // columnBook
+            // 
+            this.columnBook.Text = "Book";
+            this.columnBook.Width = 200;
+            // 
+            // columnByWho
+            // 
+            this.columnByWho.Text = "By who";
+            this.columnByWho.Width = 200;
+            // 
+            // columnSinceWhen
+            // 
+            this.columnSinceWhen.Text = "Since";
+            this.columnSinceWhen.Width = 200;
             // 
             // label2
             // 
@@ -671,15 +701,6 @@
             this.label2.Size = new System.Drawing.Size(487, 54);
             this.label2.TabIndex = 1;
             this.label2.Text = "Currently borrowed books";
-            // 
-            // listBoxBorrowedBooks
-            // 
-            this.listBoxBorrowedBooks.FormattingEnabled = true;
-            this.listBoxBorrowedBooks.ItemHeight = 15;
-            this.listBoxBorrowedBooks.Location = new System.Drawing.Point(0, 103);
-            this.listBoxBorrowedBooks.Name = "listBoxBorrowedBooks";
-            this.listBoxBorrowedBooks.Size = new System.Drawing.Size(1067, 364);
-            this.listBoxBorrowedBooks.TabIndex = 0;
             // 
             // tpReturn
             // 
@@ -710,7 +731,7 @@
             this.listViewBorrowedBooks.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             this.Book,
             this.BorrowedSince});
-            this.listViewBorrowedBooks.Location = new System.Drawing.Point(117, 109);
+            this.listViewBorrowedBooks.Location = new System.Drawing.Point(130, 107);
             this.listViewBorrowedBooks.Name = "listViewBorrowedBooks";
             this.listViewBorrowedBooks.Size = new System.Drawing.Size(781, 317);
             this.listViewBorrowedBooks.TabIndex = 4;
@@ -720,14 +741,16 @@
             // Book
             // 
             this.Book.Text = "Book";
+            this.Book.Width = 200;
             // 
             // BorrowedSince
             // 
             this.BorrowedSince.Text = "BorrowedSince";
+            this.BorrowedSince.Width = 200;
             // 
             // btnReturn
             // 
-            this.btnReturn.Location = new System.Drawing.Point(465, 449);
+            this.btnReturn.Location = new System.Drawing.Point(468, 452);
             this.btnReturn.Name = "btnReturn";
             this.btnReturn.Size = new System.Drawing.Size(113, 39);
             this.btnReturn.TabIndex = 3;
@@ -741,9 +764,9 @@
             this.lbHello.Font = new System.Drawing.Font("Segoe UI", 20F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.lbHello.Location = new System.Drawing.Point(338, 46);
             this.lbHello.Name = "lbHello";
-            this.lbHello.Size = new System.Drawing.Size(378, 37);
+            this.lbHello.Size = new System.Drawing.Size(347, 37);
             this.lbHello.TabIndex = 0;
-            this.lbHello.Text = "asdf currently borrowed books";
+            this.lbHello.Text = "... currently borrowed books";
             // 
             // tbAddBook
             // 
@@ -811,7 +834,6 @@
             this.numAddPages.Name = "numAddPages";
             this.numAddPages.Size = new System.Drawing.Size(122, 23);
             this.numAddPages.TabIndex = 8;
-            this.numAddPages.ValueChanged += new System.EventHandler(this.numAddPages_ValueChanged);
             // 
             // dateAddPublication
             // 
@@ -938,6 +960,7 @@
             this.tpSaveLoad.Controls.Add(this.btnSave);
             this.tpSaveLoad.Location = new System.Drawing.Point(4, 24);
             this.tpSaveLoad.Name = "tpSaveLoad";
+            this.tpSaveLoad.RightToLeft = System.Windows.Forms.RightToLeft.No;
             this.tpSaveLoad.Size = new System.Drawing.Size(1073, 551);
             this.tpSaveLoad.TabIndex = 3;
             this.tpSaveLoad.Text = "Save/Load data";
@@ -1086,6 +1109,9 @@
         private Button btnRemoveUser;
         private TabPage tpBorrowedBooks;
         private Label label2;
-        private ListBox listBoxBorrowedBooks;
+        private ListView listViewLibraryBorrowedBooks;
+        private ColumnHeader columnBook;
+        private ColumnHeader columnByWho;
+        private ColumnHeader columnSinceWhen;
     }
 }

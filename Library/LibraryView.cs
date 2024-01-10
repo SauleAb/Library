@@ -15,14 +15,7 @@ namespace Library
         public LibraryView()
         {
             InitializeComponent();
-            foreach (var genre in Enum.GetValues(typeof(Genres)))
-            {
-                comboAddGenre.Items.Add(genre);
-            }
-            numAddPages.Minimum = 0;
-            numAddPages.Maximum = 20000;
-            numISBN13.Maximum = 9999999999;
-            numISBN13.Minimum = 0;
+            SetupInputBoxes();
             LoadData();
             if (libraryData == null)
             {
@@ -31,14 +24,201 @@ namespace Library
                 libraryData.usersManagement = new UsersManagement();
             }
             FillUsersListBox();
-            FillListBoxLibraryBorrowedBooks();
+            FillListViewLibraryBorrowedBooks();
+            FillListBoxBooks(libraryData.bookManagement.GetAllBooks());
+        }
+        
+
+
+        // Register Login
+
+        public void ClearAllLoginRegisterBoxes()
+        {
+            tbRegisterFirstName.Text = "";
+            tbRegisterLastName.Text = "";
+            tbRegisterEmail.Text = "";
+            tbEmail.Text = "";
+            tbFirstName.Text = "";
+            tbLastName.Text = "";
+        }
+
+        private void btnRegister_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                User user = new User(tbRegisterFirstName.Text.ToLower(), tbRegisterLastName.Text.ToLower(), dateRegisterBirthDate.Value.Date, tbRegisterEmail.Text.ToLower());
+                libraryData.usersManagement.AddUser(user);
+                ClearAllLoginRegisterBoxes();
+                MessageBox.Show($"{user.GetFirstName()}'s account created succesfully!");
+                FillUsersListBox();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+            
+        }
+
+        private void btnLogin_Click(object sender, EventArgs e)
+        {
+            if(tbEmail.Text.Length > 0)
+            {
+                try
+                {
+                    currentUser = libraryData.usersManagement.GetUserByEmail(tbEmail.Text);
+                    gbReturn.Enabled = true;
+                    lbHello.Text = $"{currentUser.GetFirstName()}'s currently borrowed books";
+                    LoggedIn = true;
+                    ClearAllLoginRegisterBoxes();
+                    FillListViewBorrowedBooks();
+                    MessageBox.Show($"Welcome to our library, {currentUser.GetFirstName()}");
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("User could not be found");
+                }
+            }
+            else
+            {
+                try
+                {
+                    currentUser = libraryData.usersManagement.GetUserByNameAndBirth(tbFirstName.Text, tbLastName.Text, dateBirthDate.Value.Date);
+                    gbReturn.Enabled = true;
+                    lbHello.Text = $"{currentUser.GetFirstName()}'s currently borrowed books";
+                    LoggedIn = true;
+                    ClearAllLoginRegisterBoxes();
+                    FillListViewBorrowedBooks();
+                    MessageBox.Show($"Welcome to our library, {currentUser.GetFirstName()}");
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
+            }
+            
+        }
+
+
+
+
+        //Add book
+
+        private void btnAdd_Click(object sender, EventArgs e)
+        {
+            Book book = new Book(tbAddTitle.Text, tbAddAuthor.Text, comboAddGenre.SelectedItem.ToString(), dateAddPublication.Value.Date, Convert.ToInt32(numAddPages.Value), Convert.ToInt32(numISBN13.Value));
+            if(!libraryData.bookManagement.GetAllBooks().Contains(book) && !libraryData.bookManagement.GetAllBorrowedBooks().ContainsKey(book))
+            {
+                libraryData.bookManagement.AddBook(book);
+                ClearAddBookBoxes();
+                MessageBox.Show("The book has been added succesfully!");
+                FillListBoxBooks(libraryData.bookManagement.GetAllBooks());
+            }
+            else
+            {
+                MessageBox.Show("A copy of this book is already owned by this library");
+            }
+        }
+
+        public void ClearAddBookBoxes()
+        {
+            tbAddTitle.Text = "";
+            tbAddAuthor.Text = "";
+            numAddPages.Value = 0;
+            numISBN13.Value = 0;
+            comboAddGenre.Text = "";
+        }
+
+
+
+
+        // Available books
+
+        private void btnBorrowFromCurrentlyAvailable_Click(object sender, EventArgs e)
+        {
+            if(LoggedIn)
+            {
+                Book book = (Book)listBoxBooks.SelectedItem;
+                currentUser.AddABorrowedBook(book);
+                libraryData.bookManagement.AddBorrowedBook(book, currentUser.GetFirstName(), DateTime.Now);
+                libraryData.bookManagement.RemoveBook(book);
+                FillListBoxBooks(libraryData.bookManagement.GetAllBooks());
+                FillListViewBorrowedBooks();
+                FillListViewLibraryBorrowedBooks();
+            }
+            else
+            {
+                MessageBox.Show("Please find a user first!!");
+            }
+        }
+
+        private void btnShowAllBooks_Click(object sender, EventArgs e)
+        {
             FillListBoxBooks(libraryData.bookManagement.GetAllBooks());
         }
 
-        private void lbUsername_Click(object sender, EventArgs e)
+        public void FillListBoxBooks(List<Book> listOfBooks)
         {
-
+            listBoxBooks.Items.Clear();
+            foreach (Book book in listOfBooks)
+            {
+                listBoxBooks.Items.Add(book);
+            }
         }
+
+        public void FillListBoxFilteredBooks(List<Book> filteredBooks)
+        {
+            listBoxBooks.Items.Clear();
+            foreach(Book book in filteredBooks)
+            {
+                listBoxBooks.Items.Add(book);
+            }
+        }
+
+        private void btnRemoveBook_Click(object sender, EventArgs e)
+        {
+            Book book = (Book)listBoxBooks.SelectedItem;
+            libraryData.bookManagement.RemoveBook(book);
+            FillListBoxBooks(libraryData.bookManagement.GetAllBooks());
+        }
+
+        private void btnHistory_Click(object sender, EventArgs e)
+        {
+            Book book = (Book)listBoxBooks.SelectedItem;
+            string message = book.GetBorrowingHistory().ToString();
+            if (message != "")
+            {
+                MessageBox.Show(message);
+            }
+            else
+            {
+                MessageBox.Show("The book has not been borrowed before");
+            }
+        }
+
+        private void btnSearch_Click(object sender, EventArgs e)
+        {
+            BookManagement bookManagement = libraryData.bookManagement;
+            List<Book> filteredBooks = bookManagement.GetAllBooks();
+
+            if (cbSearch.Checked && tbSearch.Text.Length > 0)
+            {
+                filteredBooks = bookManagement.FilterByTitleOrAuthor(filteredBooks, tbSearch.Text);
+            }
+            if (cbPublicationDate.Checked)
+            {
+                filteredBooks = bookManagement.FilterByPublicationDate(filteredBooks, dateFrom.Value, dateTo.Value);
+            }
+            if (cbPages.Checked && numTo.Value > 0)
+            {
+                filteredBooks = bookManagement.FilterByPages(filteredBooks, (int)numFrom.Value, (int)numTo.Value);
+            }
+            if (cbGenre.Checked && comboGenre.SelectedItem != null)
+            {
+                filteredBooks = bookManagement.FilterByGenre(filteredBooks, comboGenre.SelectedItem.ToString());
+            }
+            FillListBoxFilteredBooks(filteredBooks);
+        }
+
         private void cbSearch_CheckedChanged(object sender, EventArgs e)
         {
             if (cbSearch.Checked)
@@ -91,215 +271,32 @@ namespace Library
             }
         }
 
-        private void numAddPages_ValueChanged(object sender, EventArgs e)
+
+        //Library borrowed books
+
+        public void FillListViewLibraryBorrowedBooks()
         {
+            listViewLibraryBorrowedBooks.Items.Clear();
 
-        }
-
-        private void btnSave_Click(object sender, EventArgs e)
-        {
-            SaveData();
-        }
-
-        private void btnLoad_Click(object sender, EventArgs e)
-        {
-            LoadData();
-        }
-
-        public void SaveData()
-        {
-            FileStream fs = null;
-            BinaryFormatter bf = null;
-
-            try
+            foreach (var pair in libraryData.bookManagement.GetAllBorrowedBooks())
             {
-                fs = new FileStream("Library1.bin", FileMode.Create, FileAccess.Write);
-                bf = new BinaryFormatter();
+                Book book = pair.Key;
+                Tuple<string, DateTime> borrowInfo = pair.Value;
 
-                bf.Serialize(fs, libraryData);
-                MessageBox.Show("Data saved successfully!");
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message);
-            }
-            finally
-            {
-                fs?.Close();
+                ListViewItem item = new ListViewItem(book.ToString());
+                item.SubItems.Add(borrowInfo.Item1); // firstName
+                item.SubItems.Add(borrowInfo.Item2.ToString()); // since when
+
+                listViewLibraryBorrowedBooks.Items.Add(item);
             }
         }
 
-        public void LoadData()
-        {
-            FileStream fs = null;
-            BinaryFormatter bf = null;
 
-            try
-            {
-                fs = new FileStream("Library1.bin", FileMode.Open, FileAccess.Read);
-                bf = new BinaryFormatter();
 
-                libraryData = (LibraryData)bf.Deserialize(fs);
-                MessageBox.Show("Data loaded successfully!");
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message);
-            }
-            finally
-            {
-                fs?.Close();
-            }
-        }
 
-        public void ClearAllLoginRegisterBoxes()
-        {
-            tbRegisterFirstName.Text = "";
-            tbRegisterLastName.Text = "";
-            tbRegisterEmail.Text = "";
-            tbEmail.Text = "";
-            tbFirstName.Text = "";
-            tbLastName.Text = "";
-        }
+        // Return
 
-        public void ClearAddBookBoxes()
-        {
-            tbAddTitle.Text = "";
-            tbAddAuthor.Text = "";
-            numAddPages.Value = 0;
-            numISBN13.Value = 0;
-            comboAddGenre.Text = "";
-        }
-
-        private void btnRegister_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                User user = new User(tbRegisterFirstName.Text, tbRegisterLastName.Text, dateRegisterBirthDate.Value.Date, tbRegisterEmail.Text);
-                libraryData.usersManagement.AddUser(user);
-                ClearAllLoginRegisterBoxes();
-                MessageBox.Show($"{user.GetFirstName()}'s account created succesfully!");
-                FillUsersListBox();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message);
-            }
-            
-        }
-
-        private void btnLogin_Click(object sender, EventArgs e)
-        {
-            if(tbEmail.Text.Length > 0)
-            {
-                try
-                {
-                    currentUser = libraryData.usersManagement.GetUserByEmail(tbEmail.Text);
-                    gbReturn.Enabled = true;
-                    lbHello.Text = $"{currentUser.GetFirstName()}'s currently borrowed books";
-                    LoggedIn = true;
-                    ClearAllLoginRegisterBoxes();
-                    FillListBoxBorrowedBooks();
-                    MessageBox.Show($"Welcome to our library, {currentUser.GetFirstName()}");
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show(ex.Message);
-                }
-            }
-            else
-            {
-                try
-                {
-                    currentUser = libraryData.usersManagement.GetUserByNameAndBirth(tbFirstName.Text, tbLastName.Text, dateBirthDate.Value.Date);
-                    gbReturn.Enabled = true;
-                    lbHello.Text = $"{currentUser.GetFirstName()}'s currently borrowed books";
-                    LoggedIn = true;
-                    ClearAllLoginRegisterBoxes();
-                    FillListBoxBorrowedBooks();
-                    MessageBox.Show($"Welcome to our library, {currentUser.GetFirstName()}");
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show(ex.Message);
-                }
-            }
-            
-        }
-
-        private void tbBorrowReturn_Click(object sender, EventArgs e)
-        {
-
-        }
-
-        public void FillUsersListBox()
-        {
-            listBoxUsers.Items.Clear();
-            List<User> users = libraryData.usersManagement.GetAllUsers(); // not loading because of the file probably
-            foreach (User user in users)
-            {
-                listBoxUsers.Items.Add(user);
-            }
-        }
-
-        private void btnAdd_Click(object sender, EventArgs e)
-        {
-            Book book = new Book(tbAddTitle.Text, tbAddAuthor.Text, comboAddGenre.Text, dateAddPublication.Value.Date, Convert.ToInt32(numAddPages.Value), Convert.ToInt32(numISBN13.Value));
-            if(!libraryData.bookManagement.GetAllBooks().Contains(book) && !libraryData.bookManagement.GetAllBorrowedBooks().Contains(book))
-            {
-                libraryData.bookManagement.AddBook(book);
-                ClearAddBookBoxes();
-                MessageBox.Show("The book has been added succesfully!");
-            }
-            else
-            {
-                MessageBox.Show("A copy of this book is already owned by this library");
-            }
-            
-        }
-
-        private void btnBorrowFromCurrentlyAvailable_Click(object sender, EventArgs e)
-        {
-            if(LoggedIn)
-            {
-                Book book = (Book)listBoxBooks.SelectedItem;
-                currentUser.AddABorrowedBook(book);
-                libraryData.bookManagement.AddBorrowedBook(book);
-                libraryData.bookManagement.RemoveBook(book);
-                FillListBoxBooks(libraryData.bookManagement.GetAllBooks());
-                FillListBoxBorrowedBooks();
-                FillListBoxLibraryBorrowedBooks();
-            }
-            else
-            {
-                MessageBox.Show("Please find a user first!!");
-            }
-        }
-
-        private void btnShowAllBooks_Click(object sender, EventArgs e)
-        {
-            FillListBoxBooks(libraryData.bookManagement.GetAllBooks());
-        }
-
-        public void FillListBoxBooks(List<Book> listOfBooks)
-        {
-            listBoxBooks.Items.Clear();
-            foreach (Book book in listOfBooks)
-            {
-                listBoxBooks.Items.Add(book);
-            }
-        }
-
-        public void FillListBoxLibraryBorrowedBooks()
-        {
-            listBoxBorrowedBooks.Items.Clear();
-            foreach(Book book in libraryData.bookManagement.GetAllBorrowedBooks())
-            {
-                listBoxBorrowedBooks.Items.Add(book);
-            }
-        }
-
-        public void FillListBoxBorrowedBooks()
+        public void FillListViewBorrowedBooks()
         {
             listViewBorrowedBooks.Items.Clear();
             foreach (var pair in currentUser.GetBorrowedBooks())
@@ -312,18 +309,6 @@ namespace Library
 
                 listViewBorrowedBooks.Items.Add(item);
             }
-        }
-
-        private void LibraryView_FormClosing(object sender, FormClosingEventArgs e)
-        {
-            SaveData();
-        }
-
-        private void btnRemoveBook_Click(object sender, EventArgs e)
-        {
-            Book book = (Book)listBoxBooks.SelectedItem;
-            libraryData.bookManagement.RemoveBook(book);
-            FillListBoxBooks(libraryData.bookManagement.GetAllBooks());
         }
 
         private void btnReturn_Click(object sender, EventArgs e)
@@ -349,8 +334,8 @@ namespace Library
                         libraryData.bookManagement.RemoveBorrowedBook(book);
                         book.AddToBorrowHistory(currentUser.GetFirstName(), date, DateTime.Now);
                         FillListBoxBooks(libraryData.bookManagement.GetAllBooks());
-                        FillListBoxBorrowedBooks();
-                        FillListBoxLibraryBorrowedBooks();
+                        FillListViewBorrowedBooks();
+                        FillListViewLibraryBorrowedBooks();
                         break;
                     }
                 }
@@ -358,60 +343,9 @@ namespace Library
             }
         }
 
-        private void btnHistory_Click(object sender, EventArgs e)
-        {
-            Book book = (Book)listBoxBooks.SelectedItem;
-            string message = book.GetBorrowingHistory().ToString();
-            if (message != "")
-            {
-                MessageBox.Show(message);
-            }
-            else
-            {
-                MessageBox.Show("The book has not been borrowed before");
-            }
 
-        }
 
-        private void btnSearch_Click(object sender, EventArgs e)
-        {
-            List<Book> filteredBooks = libraryData.bookManagement.GetAllBooks();
-
-            filteredBooks = filteredBooks.Where(book =>
-            {
-                bool passesFilter = true;
-
-                if (cbSearch.Checked && tbSearch.Text.Length > 0)
-                {
-                    string searchTerm = tbSearch.Text.ToLower();
-                    passesFilter &= book.GetTitle().ToLower().Contains(searchTerm) || book.GetAuthor().ToLower().Contains(searchTerm);
-                }
-
-                if (cbPublicationDate.Checked)
-                {
-                    DateTime fromDate = dateFrom.Value.Date;
-                    DateTime toDate = dateTo.Value.Date;
-
-                    passesFilter &= book.GetPublicationDate() >= fromDate && book.GetPublicationDate() <= toDate;
-                }
-
-                if (cbPages.Checked && numTo.Value > 0)
-                {
-                    int maxPages = (int)numTo.Value;
-                    passesFilter &= book.GetPages() <= maxPages;
-                }
-
-                if (cbGenre.Checked && comboGenre.SelectedItem != null)
-                {
-                    string selectedGenre = comboGenre.SelectedItem.ToString();
-                    passesFilter &= book.GetGenre() == selectedGenre;
-                }
-
-                return passesFilter;
-            }).ToList();
-
-            FillListBoxBooks(filteredBooks);
-        }
+        // Users
 
         private void btnRemoveUser_Click(object sender, EventArgs e)
         {
@@ -424,6 +358,102 @@ namespace Library
             {
                 libraryData.usersManagement.RemoveUser(user);
                 FillUsersListBox();
+            }
+        }
+
+        public void FillUsersListBox()
+        {
+            listBoxUsers.Items.Clear();
+            List<User> users = libraryData.usersManagement.GetAllUsers(); // not loading because of the file probably
+            foreach (User user in users)
+            {
+                listBoxUsers.Items.Add(user);
+            }
+        }
+
+
+
+        // Save Load
+
+        private void LibraryView_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            SaveData();
+        }
+
+        private void btnSave_Click(object sender, EventArgs e)
+        {
+            SaveData();
+        }
+
+        private void btnLoad_Click(object sender, EventArgs e)
+        {
+            LoadData();
+        }
+
+        public void SaveData()
+        {
+            FileStream fs = null;
+            BinaryFormatter bf = null;
+
+            try
+            {
+                fs = new FileStream("Library2.bin", FileMode.Create, FileAccess.Write);
+                bf = new BinaryFormatter();
+
+                bf.Serialize(fs, libraryData);
+                MessageBox.Show("Data saved successfully!");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+            finally
+            {
+                fs?.Close();
+            }
+        }
+
+        public void LoadData()
+        {
+            FileStream fs = null;
+            BinaryFormatter bf = null;
+
+            try
+            {
+                fs = new FileStream("Library2.bin", FileMode.Open, FileAccess.Read);
+                bf = new BinaryFormatter();
+
+                libraryData = (LibraryData)bf.Deserialize(fs);
+                MessageBox.Show("Data loaded successfully!");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+            finally
+            {
+                fs?.Close();
+            }
+        }
+
+
+        //Setup
+
+        public void SetupInputBoxes()
+        {
+            numAddPages.Minimum = 0;
+            numAddPages.Maximum = 20000;
+            numISBN13.Maximum = 9999999999;
+            numISBN13.Minimum = 0;
+            numFrom.Minimum = 0;
+            numTo.Maximum = 20000;
+            foreach (var genre in Enum.GetValues(typeof(Genres)))
+            {
+                comboAddGenre.Items.Add(genre);
+            }
+            foreach (var genre in Enum.GetValues(typeof(Genres)))
+            {
+                comboGenre.Items.Add(genre);
             }
         }
     }

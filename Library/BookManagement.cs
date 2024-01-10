@@ -10,11 +10,11 @@ namespace Library
     public class BookManagement
     {
         private List<Book> books;
-        private List<Book> borrowedBooks;
+        private Dictionary<Book, Tuple<string, DateTime>> borrowedBooks;
         public BookManagement()
         {
             books = new List<Book>();
-            borrowedBooks = new List<Book>();
+            borrowedBooks = new Dictionary<Book, Tuple<string, DateTime>>();
         }
 
         public void AddBook(Book book)
@@ -32,23 +32,84 @@ namespace Library
             return books;
         }
 
-        public void AddBorrowedBook(Book book)
+        public void AddBorrowedBook(Book book, string firstName, DateTime borrowingTime)
         {
             if(borrowedBooks == null)
             {
-                borrowedBooks = new List<Book>();
+                borrowedBooks = new Dictionary<Book, Tuple<string, DateTime>>();
             }
-            borrowedBooks.Add(book);
+            borrowedBooks.Add(book, new Tuple<string, DateTime>(firstName, borrowingTime));
         }
 
-        public void RemoveBorrowedBook (Book book)
+        public void RemoveBorrowedBook (Book book) // no need for time because there is only one copy (key)
         {
             borrowedBooks.Remove(book);
         }
 
-        public List<Book> GetAllBorrowedBooks()
+        public new Dictionary<Book, Tuple<string, DateTime>> GetAllBorrowedBooks()
         {
             return borrowedBooks;
+        }
+
+        public List<Book> FilterByTitleOrAuthor(List<Book> books, string search)
+        {
+            search = search.ToLower();
+            List<Book> filteredBooks = new List<Book> ();
+
+            foreach (Book book in books)
+            {
+                if (book.GetTitle().ToLower().Contains(search) || book.GetAuthor().ToLower().Contains(search))
+                {
+                    filteredBooks.Add(book);
+                }
+            }
+            return filteredBooks;
+        }
+
+        public List<Book> FilterByGenre(List<Book> books, string genre)
+        {
+            genre = genre.ToLower();
+            List<Book> filteredBooks = new List<Book>();
+
+            foreach (Book book in books)
+            {
+                if (book.GetGenre().ToLower() == genre)
+                {
+                    filteredBooks.Add(book);
+                }
+            }
+
+            return filteredBooks;
+        }
+
+        public List<Book> FilterByPublicationDate(List<Book> books, DateTime fromDate, DateTime toDate)
+        {
+            List<Book> filteredBooks = new List<Book>();
+
+            foreach (Book book in books)
+            {
+                if (book.GetPublicationDate() >= fromDate && book.GetPublicationDate() <= toDate)
+                {
+                    filteredBooks.Add(book);
+                }
+            }
+
+            return filteredBooks;
+        }
+
+        public List<Book> FilterByPages(List<Book> books, int minPages, int maxPages)
+        {
+            List<Book> filteredBooks = new List<Book>();
+
+            foreach (Book book in books)
+            {
+                if (book.GetPages() >= minPages && book.GetPages() <= maxPages)
+                {
+                    filteredBooks.Add(book);
+                }
+            }
+
+            return filteredBooks;
         }
     }
 }
